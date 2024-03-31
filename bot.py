@@ -59,6 +59,24 @@ async def on_ready():
                 except ExtensionAlreadyLoaded:
                     await bot.reload_extension(f"{subdir}.{file[:-3]}")
     print(f"Logged in as {bot.user}")
+    if os.path.exists("reboot_chan.txt"):
+        with open("reboot_chan.txt", 'r') as f:
+            chan_id = int(f.readline())
+            channel = bot.get_channel(chan_id)
+            await channel.send("Restart complete!")
+        os.remove("reboot_chan.txt")
+
+
+@bot.command()
+@commands.is_owner()
+async def reload(ctx: commands.Context, cog: str):
+    await ctx.message.delete()
+    if os.path.exists(f"cogs/{cog.lower()}.py"):
+        try:
+            await bot.reload_extension(f"cogs.{cog.lower()}")
+            await ctx.send(f"Reloaded `cogs.{cog.upper()}`")
+        except Exception as e:
+            await ctx.send(f"Error reloading `{cog.upper()}`: {e}")
 
 
 @bot.command()

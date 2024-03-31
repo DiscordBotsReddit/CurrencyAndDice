@@ -82,6 +82,7 @@ class Admin(commands.GroupCog):
     async def create_currency(
         self, interaction: discord.Interaction, currency_name: str
     ):
+        await interaction.response.defer(ephemeral=True)
         currency_embed = discord.Embed()
         if interaction.guild is not None and interaction.guild.icon is not None:
             currency_embed.set_thumbnail(url=interaction.guild.icon.url)
@@ -100,10 +101,9 @@ class Admin(commands.GroupCog):
             currency_embed.description = (
                 f"You already have a currency called `{exists[0]}`."
             )
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=currency_embed,
-                ephemeral=True,
-                delete_after=60,
+                ephemeral=True
             )
         else:
             currency_embed.color = discord.Color.brand_green()
@@ -119,8 +119,8 @@ class Admin(commands.GroupCog):
                 )
                 await conn.commit()
             await engine.dispose(close=True)
-            return await interaction.response.send_message(
-                embed=currency_embed, delete_after=120
+            return await interaction.followup.send(
+                embed=currency_embed, ephemeral=True
             )
 
     @app_commands.command(name="destroy", description="Deletes an existing currency.")
@@ -135,6 +135,7 @@ class Admin(commands.GroupCog):
         currency_name: str,
         double_check: Literal["No", "Yes"],
     ):
+        await interaction.response.defer()
         destroy_embed = discord.Embed()
         if interaction.guild is not None and interaction.guild.icon is not None:
             destroy_embed.set_thumbnail(url=interaction.guild.icon.url)
@@ -142,8 +143,8 @@ class Admin(commands.GroupCog):
             destroy_embed.color = discord.Color.brand_red()
             destroy_embed.title = "❌ Destroy Currency **FAILED**"
             destroy_embed.description = f"Failed to delete `{currency_name}` due to not selecting **Yes** for the double check parameter."
-            return await interaction.response.send_message(
-                embed=destroy_embed, ephemeral=True, delete_after=60
+            return await interaction.followup.send(
+                embed=destroy_embed, ephemeral=True
             )
         else:
             async with engine.begin() as conn:
@@ -168,10 +169,9 @@ class Admin(commands.GroupCog):
             destroy_embed.description = (
                 f"The currency `{currency_name}` has been deleted."
             )
-            return await interaction.response.send_message(
-                embed=destroy_embed, delete_after=120
+            return await interaction.followup.send(
+                embed=destroy_embed
             )
-        pass
 
     @app_commands.command(
         name="print_gold", description="Gives currency to selected member."
@@ -187,6 +187,7 @@ class Admin(commands.GroupCog):
         currency_name: str,
         amount: int,
     ):
+        await interaction.response.defer()
         print_currency_embed = discord.Embed(
             color=discord.Color.brand_green(),
             title="✅ Print Currency **SUCCESSFUL**",
@@ -195,10 +196,9 @@ class Admin(commands.GroupCog):
         if interaction.guild is not None and interaction.guild.icon is not None:
             print_currency_embed.set_thumbnail(url=interaction.guild.icon.url)
         if amount <= 0:
-            return await interaction.response.send_message(
-                "Please set `amount` to a value higher than 0.",
-                ephemeral=True,
-                delete_after=60,
+            return await interaction.followup.send(
+                content="Please set `amount` to a value higher than 0.",
+                ephemeral=True
             )
         async with engine.begin() as conn:
             currency_id = await conn.execute(
@@ -237,7 +237,7 @@ class Admin(commands.GroupCog):
                     .values(amount=new_amt)
                 )
                 await conn.commit()
-        await interaction.response.send_message(
+        await interaction.followup.send(
             content=f"{member.mention}", embed=print_currency_embed
         )
         await engine.dispose(close=True)
@@ -256,6 +256,7 @@ class Admin(commands.GroupCog):
         currency_name: str,
         amount: int,
     ):
+        await interaction.response.defer()
         remove_currency_embed = discord.Embed()
         if interaction.guild is not None and interaction.guild.icon is not None:
             remove_currency_embed.set_thumbnail(url=interaction.guild.icon.url)
@@ -265,10 +266,9 @@ class Admin(commands.GroupCog):
             remove_currency_embed.description = (
                 "Please set `amount` to a value higher than 0."
             )
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=remove_currency_embed,
-                ephemeral=True,
-                delete_after=60,
+                ephemeral=True
             )
         async with engine.begin() as conn:
             currency_id = await conn.execute(
@@ -290,8 +290,8 @@ class Admin(commands.GroupCog):
                 remove_currency_embed.title = "❌ Remove Currency **FAILED**"
                 remove_currency_embed.description = f"Could not remove `{currency_name}` currency, because {member.mention} has none."
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
-                    embed=remove_currency_embed, ephemeral=True, delete_after=120
+                return await interaction.followup.send(
+                    embed=remove_currency_embed, ephemeral=True
                 )
             else:
                 set_to_zero = False
@@ -315,7 +315,7 @@ class Admin(commands.GroupCog):
                 if set_to_zero:
                     remove_currency_embed.description = f"{member.mention} did not have enough `{currency_name}` to remove `{amount:,}`.\n\nThey were set to **0** instead."
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     content=f"{member.mention}", embed=remove_currency_embed
                 )
 
@@ -324,6 +324,7 @@ class Admin(commands.GroupCog):
     )
     @app_commands.describe(win_amt="The number members must get below to win dice.")
     async def set_dice_win(self, interaction: discord.Interaction, win_amt: int):
+        await interaction.response.defer()
         set_dice_embed = discord.Embed()
         if interaction.guild is not None and interaction.guild.icon is not None:
             set_dice_embed.set_thumbnail(url=interaction.guild.icon.url)
@@ -333,8 +334,8 @@ class Admin(commands.GroupCog):
             set_dice_embed.description = (
                 "Please set a win condition number greater than 0."
             )
-            return await interaction.response.send_message(
-                embed=set_dice_embed, ephemeral=True, delete_after=60
+            return await interaction.followup.send(
+                embed=set_dice_embed, ephemeral=True
             )
         else:
             async with engine.begin() as conn:
@@ -362,7 +363,7 @@ class Admin(commands.GroupCog):
                 set_dice_embed.color = discord.Color.brand_green()
                 set_dice_embed.title = "✅ Set Dice **SUCCESSFUL**"
                 set_dice_embed.description = f"From now, members win only when they get `1-{win_amt}` from {dice_cmd.mention}."  # type: ignore
-                await interaction.response.send_message(embed=set_dice_embed)
+                await interaction.followup.send(embed=set_dice_embed)
 
     @app_commands.command(
         name="set_limits",
@@ -374,6 +375,7 @@ class Admin(commands.GroupCog):
         min_bet: Optional[int],
         max_bet: Optional[int],
     ):
+        await interaction.response.defer()
         dice_limit_embed = discord.Embed(
             title="✅ Dice Limits Updated **SUCCESSFUL**",
             color=discord.Color.brand_green(),
@@ -384,8 +386,8 @@ class Admin(commands.GroupCog):
             dice_limit_embed.description = (
                 "You must set `min_bet` greater than `max_bet`."
             )
-            return await interaction.response.send_message(
-                embed=dice_limit_embed, ephemeral=True, delete_after=60
+            return await interaction.followup.send(
+                embed=dice_limit_embed, ephemeral=True
             )
         if min_bet is None and max_bet is None:
             dice_limit_embed.title = "❌ Dice Limits Update **FAILED**"
@@ -393,8 +395,8 @@ class Admin(commands.GroupCog):
             dice_limit_embed.description = (
                 "You must set either the `min_bet` or the `max_bet`."
             )
-            return await interaction.response.send_message(
-                embed=dice_limit_embed, ephemeral=True, delete_after=60
+            return await interaction.followup.send(
+                embed=dice_limit_embed, ephemeral=True
             )
         if min_bet is not None:
             async with engine.begin() as conn:
@@ -448,7 +450,7 @@ class Admin(commands.GroupCog):
                     value=f"Dice maximum bet set to `{max_bet:,}`.",
                     inline=False,
                 )
-        return await interaction.response.send_message(embed=dice_limit_embed)
+        return await interaction.followup.send(embed=dice_limit_embed)
 
 
 async def setup(bot: commands.Bot):

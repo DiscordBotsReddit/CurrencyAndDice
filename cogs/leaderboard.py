@@ -65,6 +65,7 @@ class Leaderboard(commands.Cog):
     )
     @app_commands.autocomplete(currency_name=currency_name_autocomplete)
     async def leaderboard(self, interaction: discord.Interaction, currency_name: str):
+        await interaction.response.defer()
         leaderboard_embed = discord.Embed(
             color=discord.Color.random(),
         )
@@ -88,7 +89,7 @@ class Leaderboard(commands.Cog):
         await engine.dispose(close=True)
         if len(top_25_list) == 0:
             leaderboard_embed.description = "No one has that currency yet."
-            return await interaction.response.send_message(embed=leaderboard_embed)
+            return await interaction.followup.send(embed=leaderboard_embed)
         else:
             if interaction.guild is not None:
                 for entry in top_25_list:
@@ -107,7 +108,7 @@ class Leaderboard(commands.Cog):
                             inline=False,
                         )
                 leaderboard_embed.set_footer(text=f"Top {len(top_25_list)} members.")
-                return await interaction.response.send_message(embed=leaderboard_embed)
+                return await interaction.followup.send(embed=leaderboard_embed)
 
         pass
 

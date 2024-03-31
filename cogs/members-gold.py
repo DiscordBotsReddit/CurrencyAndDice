@@ -71,6 +71,7 @@ class MembersGold(commands.Cog):
         currency_name: str,
         amount: int,
     ):
+        await interaction.response.defer()
         give_gold_embed = discord.Embed()
         if interaction.guild is not None and interaction.guild.icon is not None:
             give_gold_embed.set_thumbnail(url=interaction.guild.icon.url)
@@ -80,19 +81,17 @@ class MembersGold(commands.Cog):
             give_gold_embed.description = (
                 "Please set `amount` to a value higher than 0."
             )
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=give_gold_embed,
-                ephemeral=True,
-                delete_after=60,
+                ephemeral=True
             )
         if member == interaction.user:
             give_gold_embed.color = discord.Color.brand_red()
             give_gold_embed.title = "❌ Give Gold **FAILED**"
             give_gold_embed.description = "You cannot send youself currency."
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=give_gold_embed,
-                ephemeral=True,
-                delete_after=60,
+                ephemeral=True
             )
         async with engine.begin() as conn:
             currency_id = await conn.execute(
@@ -116,20 +115,18 @@ class MembersGold(commands.Cog):
                     f"You cannot send `{currency_name}`, because you have none."
                 )
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=give_gold_embed,
-                    ephemeral=True,
-                    delete_after=60,
+                    ephemeral=True
                 )
             elif from_amount[0] < amount:
                 give_gold_embed.color = discord.Color.brand_red()
                 give_gold_embed.title = "❌ Give Gold **FAILED**"
                 give_gold_embed.description = f"You cannot `{amount:,}` of `{currency_name}`, beacuse you only have `{from_amount[0]:,}`."
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=give_gold_embed,
-                    ephemeral=True,
-                    delete_after=60,
+                    ephemeral=True
                 )
             else:
                 to_amount = await conn.execute(
@@ -187,9 +184,9 @@ class MembersGold(commands.Cog):
                 give_gold_embed.color = discord.Color.green()
                 give_gold_embed.title = "✅ Give Gold **SUCCESSFUL**"
                 give_gold_embed.description = f"{interaction.user.mention} gave `{amount}` of `{currency_name}` to {member.mention}!"
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     content=f"{interaction.user.mention} -> {member.mention}",
-                    embed=give_gold_embed,
+                    embed=give_gold_embed
                 )
 
     @app_commands.command(
@@ -202,6 +199,7 @@ class MembersGold(commands.Cog):
     async def balance(
         self, interaction: discord.Interaction, member: Optional[discord.Member]
     ):
+        await interaction.response.defer()
         balance_embed = discord.Embed(color=discord.Color.random())
         if interaction.guild is not None and interaction.guild.icon is not None:
             balance_embed.set_thumbnail(url=interaction.guild.icon.url)
@@ -222,8 +220,8 @@ class MembersGold(commands.Cog):
                 balance_embed.title = "❌ Balance **FAILED**"
                 balance_embed.description = f"{member.mention} has no currencies!"  # type: ignore
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
-                    embed=balance_embed, ephemeral=True, delete_after=60
+                return await interaction.followup.send(
+                    embed=balance_embed, ephemeral=True
                 )
             else:
                 balance_embed.title = f"Balances for {member.display_name}"  # type: ignore
@@ -236,7 +234,7 @@ class MembersGold(commands.Cog):
                         name=currency_name[0], value=f"{cur[0]:,}", inline=False  # type: ignore
                     )
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(embed=balance_embed)
+                return await interaction.followup.send(embed=balance_embed)
 
 
 async def setup(bot: commands.Bot):

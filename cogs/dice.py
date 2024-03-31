@@ -128,20 +128,19 @@ class DiceGame(commands.Cog):
     async def dice_game(
         self, interaction: discord.Interaction, currency_name: str, bet_amount: int
     ):
+        await interaction.response.defer()
         dice_game_embed = discord.Embed()
         if interaction.guild is not None and interaction.guild.icon is not None:
             dice_game_embed.set_thumbnail(url=interaction.guild.icon.url)
         if bet_amount <= 0:
             dice_game_embed.color = discord.Color.brand_red()
-            dice_game_embed.title = "❌ 🎲Dice Game🎲 **FAILED**"
+            dice_game_embed.title = "❌ Dice Game ❌ **FAILED**"
             dice_game_embed.description = (
                 "Please set `bet_amount` to a value higher than 0."
             )
             await engine.dispose(close=True)
-            return await interaction.response.send_message(
-                embed=dice_game_embed,
-                ephemeral=True,
-                delete_after=60,
+            return await interaction.followup.send(
+                embed=dice_game_embed, ephemeral=True
             )
         async with engine.begin() as conn:
             bet_limits = await conn.execute(
@@ -152,24 +151,19 @@ class DiceGame(commands.Cog):
             bet_limits = bet_limits.one_or_none()
             if bet_limits is None:
                 dice_game_embed.color = discord.Color.brand_red()
-                dice_game_embed.title = "❌ 🎲Dice Game🎲 **FAILED**"
+                dice_game_embed.title = "❌ Dice Game ❌ **FAILED**"
                 dice_game_embed.description = (
                     "Your server admins have not set the winning roll required yet."
                 )
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
-                    embed=dice_game_embed,
-                    delete_after=120,
-                )
+                return await interaction.followup.send(embed=dice_game_embed)
             elif bet_amount < bet_limits[0] or bet_amount > bet_limits[1]:
                 dice_game_embed.color = discord.Color.brand_red()
-                dice_game_embed.title = "❌ 🎲Dice Game🎲 **FAILED**"
+                dice_game_embed.title = "❌ Dice Game ❌ **FAILED**"
                 dice_game_embed.description = f"Your server admins have set a minimum bet of `{bet_limits[0]:,}` and a maximum bet of `{bet_limits[1]:,}`."
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
-                    embed=dice_game_embed,
-                    ephemeral=True,
-                    delete_after=60,
+                return await interaction.followup.send(
+                    embed=dice_game_embed, ephemeral=True
                 )
             currency_id = await conn.execute(
                 select(Currency.id).filter_by(
@@ -187,25 +181,21 @@ class DiceGame(commands.Cog):
             currency_amt = currency_amt.one_or_none()
             if currency_amt is None:
                 dice_game_embed.color = discord.Color.brand_red()
-                dice_game_embed.title = "❌ 🎲Dice Game🎲 **FAILED**"
+                dice_game_embed.title = "❌ Dice Game ❌ **FAILED**"
                 dice_game_embed.description = (
                     f"You do not have any of `{currency_name}` currency to bet."
                 )
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
-                    embed=dice_game_embed,
-                    ephemeral=True,
-                    delete_after=60,
+                return await interaction.followup.send(
+                    embed=dice_game_embed, ephemeral=True
                 )
             elif currency_amt[0] < bet_amount:
                 dice_game_embed.color = discord.Color.brand_red()
-                dice_game_embed.title = "❌ 🎲Dice Game🎲 **FAILED**"
+                dice_game_embed.title = "❌ Dice Game ❌ **FAILED**"
                 dice_game_embed.description = f"You do not have enough of `{currency_name}` currency to bet `{bet_amount}`."
                 await engine.dispose(close=True)
-                return await interaction.response.send_message(
-                    embed=dice_game_embed,
-                    ephemeral=True,
-                    delete_after=60,
+                return await interaction.followup.send(
+                    embed=dice_game_embed, ephemeral=True
                 )
             else:
                 winning_number = await conn.execute(
@@ -214,23 +204,20 @@ class DiceGame(commands.Cog):
                 winning_number = winning_number.one_or_none()
                 if winning_number is None:
                     dice_game_embed.color = discord.Color.brand_red()
-                    dice_game_embed.title = "❌ 🎲Dice Game🎲 **FAILED**"
+                    dice_game_embed.title = "❌ Dice Game ❌ **FAILED**"
                     dice_game_embed.description = (
                         "Your server admins have not set the winning roll required yet."
                     )
                     await engine.dispose(close=True)
-                    return await interaction.response.send_message(
-                        embed=dice_game_embed,
-                        delete_after=120,
-                    )
+                    return await interaction.followup.send(embed=dice_game_embed)
                 else:
                     dice_role = random.randrange(0, 101)
                     if dice_role <= winning_number[0]:
                         amt_to_add = bet_amount
                         new_amt = currency_amt[0] + amt_to_add
                         dice_game_embed.color = discord.Color.brand_green()
-                        dice_game_embed.title = f"🎲 Dice Game 🎲 **WON**"
-                        dice_game_embed.description = f"You wagered `{bet_amount:,}` of `{currency_name}` and your roll was `{dice_role}`, which is a winning number.\n\nYou gained `{amt_to_add:,}` of `{currency_name}`!"
+                        dice_game_embed.title = "🎲 Dice Game 🎲 **WON**"
+                        dice_game_embed.description = f"You wagered `{bet_amount:,}` of `{currency_name}` and your roll was `{dice_role}`, which is a winning number.\n\nYou gained `{amt_to_add:,}` of `{currency_name}`!\nNow you have `{new_amt:,}` of `{currency_name}`."
                         dice_game_embed.set_footer(
                             text=f"Winning numbers are less than or equal to {winning_number[0]}."
                         )
@@ -245,15 +232,13 @@ class DiceGame(commands.Cog):
                         )
                         await conn.commit()
                         await engine.dispose(close=True)
-                        return await interaction.response.send_message(
-                            embed=dice_game_embed
-                        )
+                        return await interaction.followup.send(embed=dice_game_embed)
                     else:
                         amt_to_remove = bet_amount
                         new_amt = currency_amt[0] - amt_to_remove
                         dice_game_embed.color = discord.Color.brand_red()
                         dice_game_embed.title = "🎲 Dice Game 🎲 **LOST**"
-                        dice_game_embed.description = f"You wagered `{bet_amount:,}` of `{currency_name}` and your roll was `{dice_role}`, which is a losing number.\nTry again!\n\nYou lost `{bet_amount:,}` of `{currency_name}`."
+                        dice_game_embed.description = f"You wagered `{bet_amount:,}` of `{currency_name}` and your roll was `{dice_role}`, which is a losing number.\nTry again!\n\nYou lost `{bet_amount:,}` of `{currency_name}`.\nNow you have `{new_amt:,}` of `{currency_name}`."
                         dice_game_embed.set_footer(
                             text=f"Winning numbers are less than or equal to {winning_number[0]}."
                         )
@@ -268,9 +253,7 @@ class DiceGame(commands.Cog):
                         )
                         await conn.commit()
                         await engine.dispose(close=True)
-                        return await interaction.response.send_message(
-                            embed=dice_game_embed
-                        )
+                        return await interaction.followup.send(embed=dice_game_embed)
 
     @app_commands.command(
         name="roll", description="Roll a random number from 1 to 100."
