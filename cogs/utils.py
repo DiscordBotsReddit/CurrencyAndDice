@@ -15,26 +15,24 @@ class Utils(commands.GroupCog):
         return fixed
 
     def check_perms(interaction: discord.Interaction):  # type: ignore
-        return (
-            interaction.user.id == 908252159148175380
-            or interaction.user.id == 105431077492899840
-        )
+        return interaction.user.id == 908252159148175380
 
-    @app_commands.command(
-        name="restart",
-        description="Restarts the Docker container.  You probably can't run this.",
-    )
-    @app_commands.check(check_perms)
-    async def restart_bot(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
-        docker_client = docker.DockerClient(base_url="unix://var/run/docker.sock")
-        container = docker_client.containers.get("bot.CurrencyAndDiceBot")
-        await interaction.followup.send(
-            content=f"Restarting.  Will be back shortly!", ephemeral=True
-        )
-        with open("reboot_chan.txt", "w") as f:
-            f.write(str(interaction.channel.id))
-        container.restart()
+    # This currently doesn't work. #
+    # @app_commands.command(
+    #     name="restart",
+    #     description="Restarts the Docker container.  You probably can't run this.",
+    # )
+    # @app_commands.check(check_perms)
+    # async def restart_bot(self, interaction: discord.Interaction):
+    #     await interaction.response.defer(ephemeral=True)
+    #     docker_client = docker.DockerClient(base_url="unix://var/run/docker.sock")
+    #     container = docker_client.containers.get("bot.CurrencyAndDiceBot")
+    #     await interaction.followup.send(
+    #         content=f"Restarting.  Will be back shortly!", ephemeral=True
+    #     )
+    #     with open("reboot_chan.txt", "w") as f:
+    #         f.write(str(interaction.channel.id))
+    #     container.restart()
 
     async def cog_app_command_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
